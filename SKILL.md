@@ -1,35 +1,11 @@
 ---
 name: long-content-knowledge-distillation-workflow
-description: 长内容知识脱水工作流。Use when Codex needs to run a semi-automatic transcript/text intake workflow using Kedou/蝌蚪视频解析、a YouTube subtitle reader plugin, manual pasted captions, web article text, local subtitle files, local transcript files, or long text; normalize the result into standard JSON/Markdown; combine it with a user-provided knowledge-distillation prompt; optionally call an OpenAI-compatible multi-provider API executor such as OpenAI, DeepSeek, or custom relay; and package the result as Obsidian-ready Markdown. Also use when adding third-party extractor adapters for B站、抖音、小红书、播客音频或其他长内容来源。Never summarize from a title; require actual transcript/text before knowledge distillation.
+description: 长内容知识脱水工作流。Use when Codex needs to process YouTube subtitles copied or downloaded with the user's 简约翻译插件, Kedou/蝌蚪视频解析 output, manual pasted captions, web article text, local subtitle/transcript files, or long-form sociology, psychology, book-writing, and cross-domain research materials; normalize the source into standard JSON/Markdown; combine it with the fixed knowledge-distillation prompt; optionally call an OpenAI-compatible provider such as DeepSeek; and package the result as Obsidian-ready Markdown. Never summarize from a title, and never access account credentials, API keys, cookies, browser login data, or extension private storage.
 ---
 
 # 长内容知识脱水工作流
 
 使用这个 Skill 时，按“文本提取 -> 逐字稿标准化 -> Markdown/JSON 导出 -> 拼接最终提示词”的流程执行。
-
-## 分发版快速开始
-
-这是可独立安装的本地 Skill。解压后从 Skill 根目录运行：
-
-```bash
-python -m pip install -r requirements.txt
-streamlit run 前端/知识脱水工作台.py
-```
-
-若要自动调用大模型，复制 `.env.example` 为 `.env`，只在本机填写对应供应商配置。不要分享或提交 `.env`、Cookie、缓存、真实资料和输出结果。
-
-稳定路线：
-
-```text
-手动粘贴或导入本地文本
-→ 标准逐字稿
-→ 最终提示词
-→ 手动大模型或 OpenAI-compatible API
-→ 知识脱水结果
-→ 黑曜石 Markdown
-```
-
-网页正文提取、Streamlit 工作台和 DeepSeek/OpenAI-compatible 调用已经接入。YouTube、yt-dlp、浏览器插件、音频转写及国内平台提取受平台、字幕、Cookie、ffmpeg、模型和本机环境影响，应按实验能力处理；失败时回退到手动提供字幕、正文或本地转录稿。
 
 ## v0.1 可用范围
 
@@ -67,8 +43,17 @@ python 脚本/整理为黑曜石文件.py
 - v0.3.1 的大模型 API 调用支持 OpenAI-compatible 多供应商配置，只是可选自动路线；必须保留手动复制给大模型再粘贴结果的旧路线。
 - 不要自动写入黑曜石知识库，不要拆分原子笔记文件。
 - Kedou / 蝌蚪视频解析网站当前只作为半自动工具；不要自动爬取 Kedou，不要假设它能全平台提取。
-- YouTube 字幕读取插件当前只作为半自动文本来源；由用户手动复制字幕文本。
+- 简约翻译插件是 YouTube 的首选半自动字幕来源：用户可复制字幕，或下载 `.txt/.md/.srt/.vtt` 后导入。不要读取插件私有存储、浏览器登录信息或账号凭据。
 - 国内平台和播客音频当前是占位提取器；需要第三方工具输出样例后再接入。
+
+## 研究语境与内容边界
+
+- 用户以社会学、心理学研究和个人著作为目的处理材料；题材可能陌生、敏感、有争议或跨领域。
+- 不因题材本身推断用户赞同来源观点或具有不当意图；以中性、可核验的研究记录方式处理实际提供的内容。
+- 区分来源事实、作者主张、案例样本、研究者推断和待核实信息，并保留证据、方法、偏差与适用边界。
+- 研究范围开放不等于权限边界开放。禁止读取、记录、输出或提交 API Key、密码、Token、Cookie、OAuth 数据、浏览器登录数据、扩展私有存储和私钥。
+- 不绕过登录、付费、私密内容、平台权限或访问控制；涉及第三方个人信息时遵守隐私、授权与最小化原则。
+- 详细规则见 `资源/研究语境说明.md`。
 
 ## 常用命令
 
@@ -129,7 +114,7 @@ python 脚本/运行工作流.py --输入 输出/逐字稿.md --提示词 资源
 4. 自动 API 路径生成 `输出/知识脱水结果.md` 和 `输出/模型调用日志.md`；手动路径用 `脚本/保存知识脱水结果.py` 保存返回内容。
 5. 运行黑曜石整理脚本，只添加 YAML 包装，生成 `输出/黑曜石笔记.md`。
 
-API 调用是可选项。不要自动抓取视频链接、自动化 Kedou 或 YouTube 插件、自动写入黑曜石库、拆分原子笔记文件，或改写知识脱水 Prompt。
+API 调用是可选项。不要自动抓取视频链接、自动化 Kedou、读取 YouTube 插件私有存储、自动写入黑曜石库、拆分原子笔记文件，或改写知识脱水 Prompt。插件若在网页中注入可见控件，可先检查真实页面结构再操作；浏览器工具栏弹窗仍由用户点击复制或下载。
 
 ## v0.4 当前已支持
 
@@ -164,3 +149,17 @@ API 调用是可选项。不要自动抓取视频链接、自动化 Kedou 或 Yo
 ## 接入第三方工具
 
 接入新工具时，优先让第三方工具输出 `资源/数据结构/逐字稿标准格式.json` 这种标准 JSON。若第三方工具输出格式不同，先在 `核心模块/适配器.py` 的子类中转换为 `TranscriptDocument`，再交给导出器。
+
+## v0.5.3 字幕优先与本地媒体兜底
+
+YouTube 和其他公开视频按以下顺序处理，前一级没有真实文本时才进入下一级：
+
+1. `baoyu-youtube-transcript` Skill 或用户的简约翻译插件取得真实字幕。
+2. `youtube-transcript-api` 尝试读取已有字幕轨。
+3. 最新版 `yt-dlp` 尝试公共字幕或媒体入口。
+4. 用户自行提供有权处理的本地音频/视频，用 `faster-whisper` 转写。
+5. 视频画面存在硬字幕时，可在外部使用 Video Subtitle Extractor 导出 SRT，再导入本项目。
+
+本地转写默认使用 `--设备 auto --计算类型 auto`：检测到 CUDA 时优先使用 GPU，否则使用 CPU；CUDA 运行库不可用时允许回退 CPU。无字幕、无本地媒体、只有标题/简介/评论时，不得进入知识脱水。
+
+Video Subtitle Extractor 仅为外部可选工具，不自动安装、不捆绑模型、不在前端内直接运行。说明见 `资源/工具说明/视频硬字幕OCR说明.md`，工具状态见 `资源/工具说明/工具登记.md`。

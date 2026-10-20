@@ -23,9 +23,10 @@ def route_tool(source_url: str) -> ToolRoute:
             "YouTube",
             "youtube",
             [
+                "优先使用已安装的简约翻译插件复制或下载完整字幕；下载 .txt/.md/.srt/.vtt 后，运行：python 脚本/导入文本文件.py \"字幕文件路径\"。",
+                "如果插件无法取得完整字幕，可尝试 baoyu-youtube-transcript Skill。",
                 "可先运行：python 脚本/提取YouTube字幕.py \"YouTube链接\"，使用 youtube-transcript-api 获取人工字幕或自动字幕。",
                 "如果 youtube-transcript-api 不可用，可运行：python 脚本/下载字幕或音频.py \"YouTube链接\"，用 yt-dlp 尝试字幕；无字幕则下载音频。",
-                "优先使用 YouTube 字幕读取插件复制字幕文本。",
                 "也可以尝试使用 Kedou / 蝌蚪视频解析网站下载字幕。",
             ],
             ["资源/工具说明/YouTube插件使用说明.md", "资源/工具说明/Kedou使用说明.md"],

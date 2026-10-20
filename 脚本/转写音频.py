@@ -24,8 +24,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="使用 faster-whisper 转写本地音频/视频文件并导出标准逐字稿。")
     parser.add_argument("音频文件", help="本地音频或视频文件路径，支持 mp3/m4a/wav/webm/mp4。")
     parser.add_argument("--模型", default="small", help="faster-whisper 模型名，默认：small。")
-    parser.add_argument("--设备", default="cpu", help="运行设备，默认：cpu。")
-    parser.add_argument("--计算类型", default="int8", help="compute_type，默认：int8。")
+    parser.add_argument("--设备", default="auto", help="运行设备，默认：auto（优先 CUDA，失败时使用 CPU）。")
+    parser.add_argument("--计算类型", default="auto", help="compute_type，默认：auto。")
+    parser.add_argument("--模型缓存", default="", help="可选模型缓存目录；本机默认使用 D:/AI/Shared/Models/faster-whisper。")
     parser.add_argument("--输出目录", default=str(DEFAULT_OUTPUT_DIR), help="输出目录，默认：输出/。")
     return parser
 
@@ -36,10 +37,17 @@ def main(argv: list[str] | None = None) -> int:
     output_dir = Path(args.输出目录)
     try:
         validate_input_file(input_path)
-        document = AudioTranscriber(args.模型, args.设备, args.计算类型).transcribe(args.音频文件)
+        transcriber = AudioTranscriber(
+            args.模型,
+            args.设备,
+            args.计算类型,
+            args.模型缓存 or None,
+        )
+        document = transcriber.transcribe(args.音频文件)
         markdown_path = export_transcription_markdown(document, output_dir / "逐字稿.md")
         json_path = export_json(document, output_dir / "逐字稿.json")
         print("音频转写完成。")
+        print(f"运行环境：{transcriber.resolved_device} / {transcriber.resolved_compute_type}")
         print(f"已生成：{markdown_path}")
         print(f"已生成：{json_path}")
         return 0

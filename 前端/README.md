@@ -85,7 +85,7 @@ http://localhost:8501
 - 使用浏览器 Cookie 尝试。
 - 上传 `cookie.txt` 尝试。
 - 上传本地视频/音频文件。
-- OCR 字幕提取入口，占位。
+- 硬字幕 OCR 外部工具入口。
 - 音频转写入口。
 - Cookie 安全提示。
 
@@ -124,7 +124,7 @@ DEEPSEEK_MODEL=deepseek-v4-flash
 
 ### 实验功能失败怎么办
 
-YouTube、yt-dlp、faster-whisper 入口仍是实验功能。如果失败，退回手动粘贴字幕、转录稿或正文。
+YouTube 自动字幕和 yt-dlp 入口仍受视频字幕轨与平台限制。如果失败，优先导入简约翻译插件导出的字幕；没有字幕时提供本地媒体，用 faster-whisper 转写。
 
 ### 本地音频/视频转写失败怎么办
 
@@ -137,6 +137,8 @@ ffmpeg -version
 
 如果 `ffmpeg -version` 无法运行，请先安装 ffmpeg 并加入系统 PATH。上传视频文件（如 `.webm`、`.mp4`）时尤其需要 ffmpeg。
 
+转写器默认自动检测设备：有可用 NVIDIA CUDA 时优先使用 GPU，否则使用 CPU。当前机器已经检测到 RTX 3060；真实效果仍应以实际本地媒体转写结果为准。
+
 支持文件：
 
 ```text
@@ -144,6 +146,8 @@ mp3 / m4a / wav / webm / mp4
 ```
 
 如果转写结果为空，说明文件中可能没有清晰人声，建议先手动转写，再用“手动粘贴文本”或“本地文本/字幕文件上传”导入。
+
+如果视频画面中有烧录字幕，可在外部使用 Video Subtitle Extractor 导出 SRT，再从“本地文本/字幕文件上传”导入。外部工具不会由前端自动安装或运行。
 
 ### 抖音 Cookie 模式失败怎么办
 

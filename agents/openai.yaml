@@ -1,7 +1,7 @@
 interface:
   display_name: "长内容知识脱水工作流"
-  short_description: "将长字幕、文章与转录稿标准化并生成黑曜石知识脱水笔记"
-  default_prompt: "Use $long-content-knowledge-distillation-workflow to turn my transcript or article into a standardized transcript, a knowledge-distillation prompt, and an Obsidian-ready Markdown note."
+  short_description: "从真实字幕、文章或转录稿生成可核查的黑曜石知识笔记"
+  default_prompt: "Use $long-content-knowledge-distillation-workflow to obtain or import the real transcript, standardize it, distill only supported knowledge, and create an Obsidian-ready Markdown note."
 
 policy:
   allow_implicit_invocation: true

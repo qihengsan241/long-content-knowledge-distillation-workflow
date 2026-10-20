@@ -1,5 +1,6 @@
 # Python 3.10+
-yt-dlp>=2025.1.15
+# 站点适配变化快；安装后可按使用说明更新到官方 nightly。
+yt-dlp>=2026.7.4
 trafilatura>=1.9.0
 youtube-transcript-api
 faster-whisper

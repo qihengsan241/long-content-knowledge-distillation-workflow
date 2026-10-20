@@ -160,6 +160,7 @@ def render_source_center() -> None:
         if youtube_url:
             st.session_state.route_input = youtube_url
         dependency_notice("youtube_transcript_api", "youtube-transcript-api")
+        st.caption("路线状态：优先字幕；无字幕时需要用户提供本地媒体，再进入 faster-whisper 转写。")
         if st.button("实验：尝试提取 YouTube 字幕", key="extract_youtube"):
             if not youtube_url.strip():
                 show_error("没有填写 YouTube 链接。", "请先输入 YouTube 视频链接。")
@@ -168,7 +169,7 @@ def render_source_center() -> None:
                     ["提取YouTube字幕.py", youtube_url.strip()],
                     success_message="YouTube 字幕提取完成，已生成逐字稿。",
                     success_steps=["获取文本", "标准化逐字稿"],
-                    failure_hint="YouTube 字幕提取失败。请尝试 yt-dlp，或手动复制字幕到文本粘贴区。",
+                    failure_hint="YouTube 自动提取失败。请用简约翻译插件复制字幕到文本粘贴区，或下载字幕后从本地文件上传；也可尝试 yt-dlp。",
                 )
 
     with tab_video:
@@ -191,11 +192,20 @@ def render_source_center() -> None:
         audio_file = st.file_uploader("上传本地音频/视频文件", type=["mp3", "m4a", "wav", "webm", "mp4"], key="audio_upload")
         dependency_notice("faster_whisper", "faster-whisper")
         whisper_model = st.text_input("faster-whisper 模型", value="small")
-        st.caption("如果上传 webm/mp4 视频文件，需要 ffmpeg 可用并加入系统 PATH。")
+        st.caption("转写设备：自动检测，优先使用 NVIDIA CUDA；不可用时回退 CPU。webm/mp4 需要 ffmpeg。")
         if audio_file and st.button("音频转写", key="transcribe_audio"):
             saved_path = save_uploaded_file(audio_file)
             run_and_report(
-                ["转写音频.py", str(saved_path), "--模型", whisper_model.strip() or "small"],
+                [
+                    "转写音频.py",
+                    str(saved_path),
+                    "--模型",
+                    whisper_model.strip() or "small",
+                    "--设备",
+                    "auto",
+                    "--计算类型",
+                    "auto",
+                ],
                 success_message="音频转写完成，已生成逐字稿。",
                 success_steps=["获取文本", "标准化逐字稿"],
                 failure_hint="音频转写失败。请安装 faster-whisper；如果是视频文件，请安装 ffmpeg；也可以先使用手动转录稿。",
@@ -262,10 +272,10 @@ def render_douyin_experiment_area() -> None:
                 failure_hint="音频转写失败。请安装 faster-whisper；如果是视频文件，请安装 ffmpeg；也可以手动转写后导入文本。",
             )
     with col5:
-        if st.button("OCR 字幕提取入口（占位）", key="douyin_ocr_placeholder"):
+        if st.button("硬字幕 OCR（外部工具）", key="douyin_ocr_placeholder"):
             show_error(
-                "OCR 字幕提取暂未自动接入。",
-                "如果视频画面中有硬字幕，请先用半自动 OCR 工具导出 srt，再通过“本地文本/字幕文件上传”导入。",
+                "硬字幕 OCR 采用外部工具路线，当前不在工作台内自动运行。",
+                "如果画面有硬字幕，请使用 Video Subtitle Extractor 导出 srt，再通过“本地文本/字幕文件上传”导入；没有硬字幕则使用音频转写。",
             )
 
 
@@ -535,14 +545,14 @@ def recommend_route(platform: str) -> str:
     routes = {
         "普通网页": "网页正文尝试：trafilatura → 逐字稿 → 知识脱水。若失败，手动复制正文到粘贴区。",
         "网页文章": "trafilatura → 逐字稿 → 知识脱水。",
-        "YouTube": "youtube-transcript-api → 失败则 yt-dlp → 失败则音频转写 → 失败则手动粘贴。",
+        "YouTube": "字幕优先：简约翻译插件 / baoyu-youtube-transcript / youtube-transcript-api → 逐字稿；无字幕时需要本地媒体 → faster-whisper；画面硬字幕可用外部 OCR。",
         "B站": "yt-dlp 尝试字幕/音频 → 音频转写 → 手动粘贴。",
         "抖音": "yt-dlp 尝试 → 音频转写 → 手动粘贴。",
         "小红书": "网页正文尝试 / 音频转写 / 手动粘贴。",
         "X": "网页正文尝试 / 手动粘贴 / 音视频另行处理。",
         "播客音频": "下载音频 → faster-whisper 转写 → 逐字稿 → 知识脱水。",
         "本地字幕": "直接导入 → 标准化逐字稿 → 知识脱水。",
-        "本地音频": "faster-whisper 转写 → 逐字稿 → 知识脱水。",
+        "本地音频": "faster-whisper 自动选择 CUDA/CPU 转写 → 逐字稿 → 知识脱水。",
     }
     return routes.get(platform, "先尝试网页正文提取；如果失败，请手动复制正文或字幕到粘贴区。")
 

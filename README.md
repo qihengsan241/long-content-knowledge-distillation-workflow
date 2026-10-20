@@ -2,7 +2,7 @@
 
 一个本地运行的 Codex Skill，将长文章、字幕、转录稿和手动文本统一整理为标准逐字稿，拼接固定知识脱水 Prompt，并可选调用 OpenAI-compatible API，最终输出适合保存到 Obsidian 的 Markdown。
 
-> 当前发布版本：`v0.5.1`
+> 当前发布版本：`v0.5.3`
 
 ## 核心原则
 
@@ -17,7 +17,7 @@
 手动粘贴 / 本地文件 / 网页文章
 → 标准逐字稿 Markdown + JSON
 → 最终提示词
-→ DeepSeek / OpenAI-compatible API 或手动处理
+→ 当前 Codex、手动处理或可选 OpenAI-compatible API
 → 知识脱水结果
 → Obsidian Markdown
 ```
@@ -30,9 +30,12 @@
 - 标准化时间戳与无时间戳文本
 - 生成统一逐字稿 JSON 和 Markdown
 - 拼接知识脱水 Prompt
-- 调用 DeepSeek 或其他 OpenAI-compatible API
+- 可由当前 Codex 直接执行知识脱水，也可选调用 DeepSeek 或其他 OpenAI-compatible API
 - 将结果包装为 Obsidian Markdown
 - Streamlit 本地工作台
+- YouTube 字幕优先路由：字幕 Skill / 插件 → youtube-transcript-api → yt-dlp → 本地媒体转写
+- faster-whisper 自动选择 CUDA/CPU，CUDA 不可用时回退 CPU
+- 外部硬字幕 OCR 路线：Video Subtitle Extractor 导出 SRT 后导入
 
 ## 实验能力
 
@@ -40,16 +43,16 @@
 
 - YouTube 字幕自动提取
 - `yt-dlp` 通用字幕与音频下载
-- `faster-whisper` 本地音频/视频转写
+- `faster-whisper` 本地音频/视频转写的真实媒体验收
 - 抖音、B站、小红书、X 等平台链接处理
 
-这些入口失败时，请回退到手动提供字幕、正文或本地转录稿。项目不会绕过登录、付费、私密内容或平台权限限制。
+这些入口失败时，请回退到手动提供字幕、正文或本地转录稿。项目不会根据标题、简介、评论或弹幕生成逐字稿，也不会绕过登录、付费、私密内容或平台权限限制。
 
 ## 环境要求
 
 - Python 3.10 或更高版本
 - 本地音视频处理需要单独安装 `ffmpeg` 并加入 `PATH`
-- 自动知识脱水需要使用者自己的 API Key
+- 自动 API 路线需要使用者自己的 API Key；在 Codex 会话中也可以直接按固定 Prompt 处理，无需额外 API
 
 安装依赖：
 
