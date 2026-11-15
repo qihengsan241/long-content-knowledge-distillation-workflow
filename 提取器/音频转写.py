@@ -121,7 +121,7 @@ class AudioTranscriber:
         if configured:
             return Path(configured)
 
-        shared_models = Path("D:/AI/Shared/Models")
+        shared_models = Path("C:/AI/Shared/Models")
         if os.name == "nt" and shared_models.exists():
             return shared_models / "faster-whisper"
         return None

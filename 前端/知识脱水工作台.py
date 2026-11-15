@@ -17,10 +17,16 @@ import streamlit.components.v1 as components
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from 核心模块.配置路径 import resolve_env_path
+
+
 SCRIPT_DIR = PROJECT_ROOT / "脚本"
 OUTPUT_DIR = PROJECT_ROOT / "输出"
 TEMP_DIR = OUTPUT_DIR / "前端临时文件"
-ENV_PATH = PROJECT_ROOT / ".env"
+ENV_PATH = resolve_env_path(PROJECT_ROOT)
 
 STATUS_STEPS = [
     "获取文本",

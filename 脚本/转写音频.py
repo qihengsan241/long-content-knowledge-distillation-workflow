@@ -26,7 +26,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--模型", default="small", help="faster-whisper 模型名，默认：small。")
     parser.add_argument("--设备", default="auto", help="运行设备，默认：auto（优先 CUDA，失败时使用 CPU）。")
     parser.add_argument("--计算类型", default="auto", help="compute_type，默认：auto。")
-    parser.add_argument("--模型缓存", default="", help="可选模型缓存目录；本机默认使用 D:/AI/Shared/Models/faster-whisper。")
+    parser.add_argument("--模型缓存", default="", help="可选模型缓存目录；本机默认使用 C:/AI/Shared/Models/faster-whisper。")
     parser.add_argument("--输出目录", default=str(DEFAULT_OUTPUT_DIR), help="输出目录，默认：输出/。")
     return parser
 

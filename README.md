@@ -2,7 +2,7 @@
 
 一个本地运行的 Codex Skill，将长文章、字幕、转录稿和手动文本统一整理为标准逐字稿，拼接固定知识脱水 Prompt，并可选调用 OpenAI-compatible API，最终输出适合保存到 Obsidian 的 Markdown。
 
-> 当前发布版本：`v0.5.3`
+> 当前本地版本：`v0.6`
 
 ## 核心原则
 
@@ -62,7 +62,15 @@ python -m pip install -r requirements.txt
 
 ## 快速开始
 
-启动本地工作台：
+默认使用无网页自动流程：
+
+```powershell
+.\.venv\Scripts\python.exe "脚本\自动知识脱水.py" "文章链接或本地文件路径"
+```
+
+每次任务会在 `C:\AI\Outputs\长内容知识脱水工作流\Codex` 下创建独立目录，并自动生成逐字稿、最终提示词、知识脱水结果、模型调用日志和黑曜石笔记。
+
+Streamlit 本地工作台仅作为兼容备用：
 
 ```bash
 streamlit run 前端/知识脱水工作台.py
@@ -88,13 +96,13 @@ python 脚本/整理为黑曜石文件.py
 
 ## API 配置
 
-复制配置模板：
+当前 Codex 本机配置保存在私密状态目录，不放入 Git 项目：
 
-```powershell
-Copy-Item .env.example .env
+```text
+C:\AI\Private\AgentState\Codex\长内容知识脱水工作流\.env
 ```
 
-然后只在本机填写 `.env`。支持以下供应商模式：
+可以用 `--env` 或环境变量 `KNOWLEDGE_DISTILLATION_ENV_FILE` 指定其他私密配置路径。支持以下供应商模式：
 
 - `openai`
 - `deepseek`

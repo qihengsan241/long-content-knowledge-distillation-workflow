@@ -9,7 +9,13 @@ from pathlib import Path
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_ENV = PROJECT_ROOT / ".env"
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from 核心模块.配置路径 import resolve_env_path
+
+
+DEFAULT_ENV = resolve_env_path(PROJECT_ROOT)
 DEFAULT_PROMPT = PROJECT_ROOT / "输出" / "最终提示词.md"
 DEFAULT_OUTPUT = PROJECT_ROOT / "输出" / "知识脱水结果.md"
 DEFAULT_LOG = PROJECT_ROOT / "输出" / "模型调用日志.md"
@@ -40,7 +46,7 @@ class LogSnapshot:
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="读取最终提示词，调用 OpenAI-compatible API 执行知识脱水，并保存结果。")
-    parser.add_argument("--env", default=str(DEFAULT_ENV), help="配置文件路径，默认：.env。")
+    parser.add_argument("--env", default=str(DEFAULT_ENV), help="配置文件路径，默认使用 Codex 私密状态目录。")
     parser.add_argument("--输入", default=str(DEFAULT_PROMPT), help="最终提示词路径，默认：输出/最终提示词.md。")
     parser.add_argument("--输出", default=str(DEFAULT_OUTPUT), help="知识脱水结果输出路径，默认：输出/知识脱水结果.md。")
     parser.add_argument("--日志", default=str(DEFAULT_LOG), help="模型调用日志路径，默认：输出/模型调用日志.md。")
@@ -78,6 +84,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     except Exception as exc:
         snapshot = LogSnapshot(config.provider, config.base_url, config.model_name) if config else read_log_snapshot(env_path)
+        secret_values = (config.api_key,) if config and config.api_key else ()
+        safe_error_text = redact_text(str(exc), secret_values)
         write_log(
             log_path,
             status="失败",
@@ -87,8 +95,9 @@ def main(argv: list[str] | None = None) -> int:
             prompt_chars=None,
             result_chars=None,
             error=exc,
+            secret_values=secret_values,
         )
-        print(f"调用大模型失败：{exc}", file=sys.stderr)
+        print(f"调用大模型失败：{safe_error_text}", file=sys.stderr)
         print(f"错误信息已保存到：{log_path}", file=sys.stderr)
         print(
             "可以退回手动流程：打开 输出/最终提示词.md，复制给 ChatGPT / Claude / DeepSeek 网页端，"
@@ -100,7 +109,7 @@ def main(argv: list[str] | None = None) -> int:
 
 def load_model_config(env_path: Path) -> ModelConfig:
     if not env_path.exists():
-        raise FileNotFoundError("找不到 .env。请先复制 配置示例.env 为 .env，并填写 LLM_PROVIDER 和对应供应商配置。")
+        raise FileNotFoundError(f"找不到模型配置：{env_path}。请在私密配置文件中填写供应商设置。")
 
     try:
         from dotenv import load_dotenv
@@ -240,6 +249,14 @@ def read_env_values(env_path: Path) -> dict[str, str]:
     return values
 
 
+def redact_text(text: str, secret_values: tuple[str, ...]) -> str:
+    redacted = text
+    for secret in secret_values:
+        if secret:
+            redacted = redacted.replace(secret, "[REDACTED]")
+    return redacted
+
+
 def write_log(
     path: Path,
     *,
@@ -250,6 +267,7 @@ def write_log(
     prompt_chars: int | None,
     result_chars: int | None,
     error: Exception | None = None,
+    secret_values: tuple[str, ...] = (),
 ) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     lines = [
@@ -273,7 +291,7 @@ def write_log(
                 "## 错误信息",
                 "",
                 f"错误类型：{error.__class__.__name__}",
-                f"错误内容：{error}",
+                f"错误内容：{redact_text(str(error), secret_values)}",
             ]
         )
     path.write_text("\n".join(lines) + "\n", encoding="utf-8")

@@ -7,6 +7,13 @@ import sys
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+from 核心模块.配置路径 import resolve_env_path
+
+
+ENV_PATH = resolve_env_path(PROJECT_ROOT)
 SUPPORTED_PROVIDERS = {"openai", "deepseek", "custom"}
 DEFAULT_BASE_URLS = {
     "openai": "https://api.openai.com/v1",
@@ -19,7 +26,7 @@ def main() -> int:
         check_file("知识脱水 Prompt", PROJECT_ROOT / "资源" / "提示词" / "知识脱水提示词.md"),
         check_file("逐字稿 Markdown", PROJECT_ROOT / "输出" / "逐字稿.md"),
         check_file("最终提示词", PROJECT_ROOT / "输出" / "最终提示词.md"),
-        check_file(".env 配置", PROJECT_ROOT / ".env"),
+        check_file("私密模型配置", ENV_PATH),
         *check_llm_provider_config(),
         check_import("openai"),
         check_import("dotenv"),
@@ -42,7 +49,7 @@ def check_file(label: str, path: Path) -> tuple[bool, str]:
 
 
 def check_llm_provider_config() -> list[tuple[bool, str]]:
-    env_path = PROJECT_ROOT / ".env"
+    env_path = ENV_PATH
     if not env_path.exists():
         return [
             (False, "LLM_PROVIDER：未检查，.env 不存在"),

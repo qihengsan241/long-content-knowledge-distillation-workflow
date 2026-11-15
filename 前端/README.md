@@ -97,13 +97,13 @@ Cookie 不会写入日志，`cookie.txt`、`*.cookies.txt` 和 `cookies/` 已加
 
 ### DeepSeek 调用失败怎么办
 
-检查项目根目录 `.env`：
+检查私密模型配置：`C:\AI\Private\AgentState\Codex\长内容知识脱水工作流\.env`。
 
 ```text
 LLM_PROVIDER=deepseek
 DEEPSEEK_API_KEY=你的 DeepSeek API Key
 DEEPSEEK_BASE_URL=https://api.deepseek.com
-DEEPSEEK_MODEL=deepseek-v4-flash
+DEEPSEEK_MODEL=deepseek-flash
 ```
 
 不要把 API Key 粘贴到聊天或日志里。确认配置后重新点击“调用 DeepSeek 知识脱水”。

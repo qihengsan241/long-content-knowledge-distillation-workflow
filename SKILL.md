@@ -1,11 +1,51 @@
 ---
 name: long-content-knowledge-distillation-workflow
-description: 长内容知识脱水工作流。Use when Codex needs to process YouTube subtitles copied or downloaded with the user's 简约翻译插件, Kedou/蝌蚪视频解析 output, manual pasted captions, web article text, local subtitle/transcript files, or long-form sociology, psychology, book-writing, and cross-domain research materials; normalize the source into standard JSON/Markdown; combine it with the fixed knowledge-distillation prompt; optionally call an OpenAI-compatible provider such as DeepSeek; and package the result as Obsidian-ready Markdown. Never summarize from a title, and never access account credentials, API keys, cookies, browser login data, or extension private storage.
+description: 自动处理长内容知识脱水。Use when the user provides a URL, subtitle/transcript, article, local audio/video, or long text and asks for “脱水” or an Obsidian-ready knowledge note. Obtain real text, standardize it, combine it with the fixed prompt, call the configured DeepSeek-compatible API, and return the generated file path. Never continue from only a title, summary, comment, or description.
 ---
 
 # 长内容知识脱水工作流
 
 使用这个 Skill 时，按“文本提取 -> 逐字稿标准化 -> Markdown/JSON 导出 -> 拼接最终提示词”的流程执行。
+
+## 默认自动执行
+
+当用户发送“链接/文件/正文 + 脱水”时，不要让用户打开网页工作台，也不要要求用户逐步运行命令。非 YouTube 输入直接调用：
+
+```powershell
+C:\AI\Projects\long-content-knowledge-distillation-workflow\.venv\Scripts\python.exe C:\AI\Projects\long-content-knowledge-distillation-workflow\脚本\自动知识脱水.py "输入"
+```
+
+- 链接或本地文件直接作为 `输入`。
+- 用户粘贴的长文本优先通过标准输入传给脚本，避免把整段正文写进命令行。
+- 每次任务写入 `C:\AI\Outputs\长内容知识脱水工作流\Codex\<时间>-auto-distillation`，不要覆盖上一次结果。
+- 成功后向用户返回 `黑曜石笔记.md` 和本次输出目录。
+- 没有获得真实正文或逐字稿时立即停止，不调用模型。
+- 模型配置默认从 `C:\AI\Private\AgentState\Codex\长内容知识脱水工作流\.env` 读取；只检查是否存在，禁止读取、输出或记录 API Key。
+- `前端/知识脱水工作台.py` 仅作为兼容备用，不是默认入口。
+
+YouTube 输入使用下方“两层字幕入口”，不要让一键脚本在简约翻译插件之前直接进入 `yt-dlp`。
+
+## YouTube 两层字幕入口
+
+按以下顺序获取真实字幕，前一级成功后立即停止继续提取：
+
+1. 运行 `脚本/提取YouTube字幕.py`，用 `youtube-transcript-api` 直接读取 YouTube 字幕轨；人工字幕优先，自动字幕次选。
+2. 直读失败时，读取 `资源/工具说明/YouTube插件使用说明.md`，用 OpenCLI 检查真实 YouTube 页面。找到简约翻译注入的“下载字幕 (VTT)”可见按钮后下载到本次任务输出目录，再运行：
+
+```powershell
+python 脚本/导入文本文件.py "插件字幕.vtt" --来源链接 "YouTube链接" --平台 YouTube --提取方式 "简约翻译插件" --简约插件清洗 --输出目录 "本次输出目录"
+```
+
+3. 页面没有插件控件、插件没有完整字幕或导入失败时，才运行 `脚本/下载字幕或音频.py`。
+4. `yt-dlp` 只拿到媒体时，运行 `脚本/转写音频.py`。
+
+浏览器操作必须先运行 `opencli doctor`，再读取页面结构并操作可见控件。保存对话框可以把 VTT 直接写入本次 `C:\AI\Outputs\长内容知识脱水工作流\Codex\...` 任务目录。不要读取插件私有存储、Cookie、浏览器登录数据库或账号凭据。只有标题、简介、评论、弹幕或不完整的可见列表时，不得进入知识脱水。
+
+若插件字幕文件已由用户或浏览器协作取得，也可使用兼容入口：
+
+```powershell
+python 脚本/自动知识脱水.py "YouTube链接" --简约字幕文件 "插件字幕.vtt"
+```
 
 ## v0.1 可用范围
 
@@ -43,7 +83,7 @@ python 脚本/整理为黑曜石文件.py
 - v0.3.1 的大模型 API 调用支持 OpenAI-compatible 多供应商配置，只是可选自动路线；必须保留手动复制给大模型再粘贴结果的旧路线。
 - 不要自动写入黑曜石知识库，不要拆分原子笔记文件。
 - Kedou / 蝌蚪视频解析网站当前只作为半自动工具；不要自动爬取 Kedou，不要假设它能全平台提取。
-- 简约翻译插件是 YouTube 的首选半自动字幕来源：用户可复制字幕，或下载 `.txt/.md/.srt/.vtt` 后导入。不要读取插件私有存储、浏览器登录信息或账号凭据。
+- 简约翻译插件是 YouTube 直读字幕轨失败后的第二层来源：优先下载 `.vtt` 后导入。不要读取插件私有存储、浏览器登录信息或账号凭据。
 - 国内平台和播客音频当前是占位提取器；需要第三方工具输出样例后再接入。
 
 ## 研究语境与内容边界
@@ -114,7 +154,7 @@ python 脚本/运行工作流.py --输入 输出/逐字稿.md --提示词 资源
 4. 自动 API 路径生成 `输出/知识脱水结果.md` 和 `输出/模型调用日志.md`；手动路径用 `脚本/保存知识脱水结果.py` 保存返回内容。
 5. 运行黑曜石整理脚本，只添加 YAML 包装，生成 `输出/黑曜石笔记.md`。
 
-API 调用是可选项。不要自动抓取视频链接、自动化 Kedou、读取 YouTube 插件私有存储、自动写入黑曜石库、拆分原子笔记文件，或改写知识脱水 Prompt。插件若在网页中注入可见控件，可先检查真实页面结构再操作；浏览器工具栏弹窗仍由用户点击复制或下载。
+API 调用是可选项。不要自动化 Kedou、读取 YouTube 插件私有存储、自动写入黑曜石库、拆分原子笔记文件，或改写知识脱水 Prompt。YouTube 只按已验证的字幕轨、页面可见插件控件、`yt-dlp` 和本地转写路线处理；其他未支持平台不做无依据抓取。浏览器工具栏弹窗无法从页面结构访问时再由用户点击复制或下载。
 
 ## v0.4 当前已支持
 
@@ -125,11 +165,12 @@ API 调用是可选项。不要自动抓取视频链接、自动化 Kedou、读�
 - DeepSeek 自动知识脱水。
 - 黑曜石 Markdown 输出。
 - Playwright 前端结构验收。
+- YouTube 直接字幕轨提取。
+- 简约翻译插件页面可见 VTT 下载与标准化导入。
 - 抖音 Cookie 授权实验入口：仅在用户明确选择后使用浏览器 Cookie 或 cookie.txt。
 
 ## 当前仍未稳定支持
 
-- YouTube 字幕自动提取真实验收。
 - yt-dlp 通用字幕/音频真实验收。
 - faster-whisper 音频转写真实验收。
 - 抖音 / 小红书 / X 自动提取。
@@ -154,8 +195,8 @@ API 调用是可选项。不要自动抓取视频链接、自动化 Kedou、读�
 
 YouTube 和其他公开视频按以下顺序处理，前一级没有真实文本时才进入下一级：
 
-1. `baoyu-youtube-transcript` Skill 或用户的简约翻译插件取得真实字幕。
-2. `youtube-transcript-api` 尝试读取已有字幕轨。
+1. `youtube-transcript-api` 直接读取 YouTube 已有字幕轨。
+2. 直读失败后，用简约翻译插件从 YouTube 页面可见控件下载真实 VTT 字幕并导入。
 3. 最新版 `yt-dlp` 尝试公共字幕或媒体入口。
 4. 用户自行提供有权处理的本地音频/视频，用 `faster-whisper` 转写。
 5. 视频画面存在硬字幕时，可在外部使用 Video Subtitle Extractor 导出 SRT，再导入本项目。

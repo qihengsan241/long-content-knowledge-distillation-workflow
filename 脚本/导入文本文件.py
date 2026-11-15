@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -11,13 +12,20 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from 核心模块.导出器 import export_json, export_markdown
 from 核心模块.数据结构 import TranscriptDocument
-from 核心模块.标准化 import document_from_subtitle_file
+from 核心模块.标准化 import document_from_subtitle_file, raw_text_from_segments
 from 核心模块.文本清洗 import clean_pasted_text
 from 核心模块.时间戳识别 import parse_pasted_text
 
 
 DEFAULT_OUTPUT_DIR = PROJECT_ROOT / "输出"
 SUPPORTED_SUFFIXES = {".txt", ".md", ".srt", ".vtt"}
+KISS_TRANSLATOR_PLACEHOLDERS = {
+    "[translation failed]",
+    "translation failed",
+    "[翻译失败]",
+    "翻译失败",
+}
+KISS_TRANSLATOR_BRACKETED_PATTERN = re.compile(r"\s*\[(?:translation failed|翻译失败)\]\s*", re.IGNORECASE)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -28,6 +36,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--作者", default="", help="可选：作者。")
     parser.add_argument("--平台", default="", help="可选：平台。")
     parser.add_argument("--类型", default="", help="可选：内容类型。")
+    parser.add_argument("--提取方式", default="", help="可选：覆盖逐字稿中的提取方式。")
+    parser.add_argument(
+        "--简约插件清洗",
+        action="store_true",
+        help="移除简约翻译字幕中的翻译失败占位符，并将提取方式标记为简约翻译插件。",
+    )
     parser.add_argument("--输出目录", default=str(DEFAULT_OUTPUT_DIR), help="输出目录，默认：输出/。")
     return parser
 
@@ -42,6 +56,13 @@ def main(argv: list[str] | None = None) -> int:
             raise ValueError("只支持 .txt / .md / .srt / .vtt 文件。")
 
         document = build_document_from_file(path, args)
+        if args.简约插件清洗:
+            removed = clean_kiss_translator_placeholders(document)
+            document.extraction_method = args.提取方式.strip() or "简约翻译插件"
+            if removed:
+                document.warnings.append(f"已移除 {removed} 处简约翻译失败占位符。")
+        elif args.提取方式.strip():
+            document.extraction_method = args.提取方式.strip()
         document.assert_has_content()
 
         output_dir = Path(args.输出目录)
@@ -81,6 +102,31 @@ def build_document_from_file(path: Path, args: argparse.Namespace) -> Transcript
     document.author = args.作者.strip()
     document.platform = args.平台.strip() or args.类型.strip() or document.platform or "本地文本文件"
     return document
+
+
+def clean_kiss_translator_placeholders(document: TranscriptDocument) -> int:
+    removed = 0
+    kept_segments = []
+    for segment in document.segments:
+        kept_lines = []
+        for line in segment.text.splitlines():
+            stripped = line.strip()
+            if stripped.casefold() in KISS_TRANSLATOR_PLACEHOLDERS:
+                removed += 1
+                continue
+            matches = KISS_TRANSLATOR_BRACKETED_PATTERN.findall(stripped)
+            if matches:
+                removed += len(matches)
+                stripped = KISS_TRANSLATOR_BRACKETED_PATTERN.sub(" ", stripped).strip()
+            if stripped:
+                kept_lines.append(stripped)
+        segment.text = " ".join(kept_lines)
+        if segment.text:
+            kept_segments.append(segment)
+
+    document.segments = kept_segments
+    document.raw_text = raw_text_from_segments(document.segments)
+    return removed
 
 
 if __name__ == "__main__":
